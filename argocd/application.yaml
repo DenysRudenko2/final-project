@@ -7,7 +7,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/DenysRudenko2/lesson-11.git
+    repoURL: https://github.com/DenysRudenko2/final-project.git
     targetRevision: main
     path: helm
     helm:
