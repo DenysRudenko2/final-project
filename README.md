@@ -20,6 +20,24 @@ Promtail ── stdout ─────►│  Loki → Grafana Explore (логи
 GitLab CI (drift/manual) ─► retrain → новий образ ghcr → bump Helm tag → ArgoCD redeploy
 ```
 
+## Скриншоти (реальні, з кластера)
+
+### ArgoCD — застосунок `aiops-quality` (Synced / Healthy)
+GitOps-деплой Helm-чарту з цього репо (path `helm`, ns `aiops`).
+
+![ArgoCD app](screenshots/01-argocd-app.png)
+
+### Grafana — метрики сервісу
+`http_requests_total` (req/s до `/predict`) та `drift_detected_total` — реальні дані,
+зібрані Prometheus через ServiceMonitor.
+
+![Grafana metrics](screenshots/02-grafana-metrics.png)
+
+### Grafana → Loki — логи дрейфу
+Логи сервісу (Promtail → Loki), відфільтровані `{namespace="aiops"} |= "Drift detected"`.
+
+![Loki drift logs](screenshots/03-grafana-loki-logs.png)
+
 ## Структура
 
 ```
