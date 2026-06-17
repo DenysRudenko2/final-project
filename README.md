@@ -127,6 +127,3 @@ GitLab trigger (webhook) для авто-retrain.
 1. Змінити `model/train.py` (дані/алгоритм/параметри).
 2. Запустити `retrain-model` (або локально build+push нового тегу).
 3. ArgoCD redeploy за оновленим `helm/values.yaml` tag.
-
-> Репозиторій на GitHub, тож GitLab-пайплайн реально не виконується — `.gitlab-ci.yml`
-> готовий; для запуску продублюйте репо в GitLab і додайте CI-змінні (`GHCR_USER/TOKEN`).
