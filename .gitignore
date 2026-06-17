@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+# модель генерується train.py / під час білду образу
+model/model.pkl
+# Terraform (на випадок)
+**/.terraform/
+*.tfstate*

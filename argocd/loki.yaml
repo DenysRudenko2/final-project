@@ -1,0 +1,35 @@
+# Loki + Promtail через ArgoCD — централізований збір stdout-логів сервісу.
+# Promtail (DaemonSet) збирає логи з усіх подів → Loki → Grafana (Explore).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: infra-tools
+spec:
+  project: default
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki-stack
+    targetRevision: 2.10.2
+    helm:
+      valuesObject:
+        grafana:
+          enabled: false # Grafana вже є в kube-prometheus-stack
+        prometheus:
+          enabled: false
+        loki:
+          persistence:
+            enabled: false
+        promtail:
+          enabled: true # агент збору логів на кожному вузлі
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

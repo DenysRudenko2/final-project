@@ -1,0 +1,18 @@
+# Статичний scrape-конфіг для kube-prometheus-stack (альтернатива ServiceMonitor).
+# Підключається як Secret через prometheus.prometheusSpec.additionalScrapeConfigs.
+# У цьому проєкті основний шлях — ServiceMonitor з Helm-чарту; цей файл наведено
+# як другий варіант збору /metrics FastAPI-сервісу.
+- job_name: aiops-quality
+  metrics_path: /metrics
+  kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+          - aiops
+  relabel_configs:
+    - source_labels: [__meta_kubernetes_service_label_app]
+      regex: aiops-quality
+      action: keep
+    - source_labels: [__meta_kubernetes_endpoint_port_name]
+      regex: http
+      action: keep

@@ -1,0 +1,48 @@
+# GitLab CI — retrain ML-моделі при дрейфі: тренування → новий образ → redeploy.
+#
+# CI/CD variables (Settings → CI/CD → Variables):
+#   GHCR_USER, GHCR_TOKEN  — для push образу в ghcr.io
+#   (опц.) тригер: вручну, через schedule або webhook із сервісу при "Drift detected".
+
+stages:
+  - retrain
+  - deploy
+
+retrain-model:
+  stage: retrain
+  image: python:3.12-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'        # ручний запуск
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'    # webhook/API-тригер (з сервісу при дрейфі)
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'   # за розкладом
+  script:
+    - pip install --no-cache-dir scikit-learn numpy
+    - python model/train.py                      # генерує новий model/model.pkl
+    - echo "Retrained model artifact ready"
+  artifacts:
+    paths:
+      - model/model.pkl
+    expire_in: 1 week
+
+build-and-deploy:
+  stage: deploy
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs: ["retrain-model"]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  variables:
+    IMAGE: ghcr.io/denysrudenko2/aiops-quality
+  script:
+    - echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+    - docker build -t "$IMAGE:$CI_COMMIT_SHORT_SHA" -t "$IMAGE:latest" .
+    - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$IMAGE:latest"
+    # Оновлюємо тег у Helm-values і пушимо → ArgoCD auto-sync підхопить новий образ
+    - sed -i "s|tag: .*|tag: $CI_COMMIT_SHORT_SHA|" helm/values.yaml
+    - git config user.email "ci@gitlab"; git config user.name "gitlab-ci"
+    - git commit -am "retrain: bump image to $CI_COMMIT_SHORT_SHA" || echo "no change"
+    - git push "https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:main

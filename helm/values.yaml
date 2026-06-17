@@ -1,0 +1,32 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/denysrudenko2/aiops-quality
+  tag: latest
+  pullPolicy: Always
+
+# Секрет для приватного ghcr-образу (створюється поза чартом, див. README)
+imagePullSecrets:
+  - name: ghcr-pull
+
+service:
+  type: ClusterIP
+  port: 8000
+
+# Змінні середовища сервісу
+env:
+  DRIFT_Z_THRESHOLD: "3.0"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# ServiceMonitor — щоб Prometheus (kube-prometheus-stack) збирав /metrics
+serviceMonitor:
+  enabled: true
+  path: /metrics
+  interval: 15s
